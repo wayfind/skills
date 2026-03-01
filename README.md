@@ -18,11 +18,11 @@ Gmail automation powered by [gmail-agent](https://github.com/fanzhe/gmail-agent)
 
 **Install:**
 ```bash
-npx skills add fanzhe/claude-skills --skill gmail
+npx skills add wayfind/claude-skills --skill gmail
 ```
 
 ## Install All
 
 ```bash
-npx skills add fanzhe/claude-skills
+npx skills add wayfind/claude-skills
 ```
