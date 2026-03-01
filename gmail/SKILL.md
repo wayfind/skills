@@ -21,14 +21,16 @@ a Go CLI for Gmail automation via Google OAuth + Anthropic API.
 git clone https://github.com/fanzhe/gmail-agent ~/gmail-agent
 cd ~/gmail-agent
 
-# 2. Place Google OAuth credentials (download from Google Cloud Console)
-cp /path/to/client_secret.json credentials.json
+# 2. Create Google OAuth credentials (no gcloud needed — browser only, ~5 clicks)
+./setup-gcp.sh
+# Guides you through: create project → enable Gmail API → create OAuth client
+# Waits for credentials.json to appear automatically
 
-# 3. Configure
+# 3. Configure Anthropic API
 cp config.example.json config.json
 # Edit config.json: set anthropic_key or anthropic_token
 
-# 4. Initialize (opens browser for OAuth the first time)
+# 4. Initialize (opens browser for Gmail OAuth the first time)
 ./run.sh init
 # Generates: labels-plan.yaml (AI-suggested label cleanup)
 #            rules.yaml (AI-generated classification rules from email samples)
