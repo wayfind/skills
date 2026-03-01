@@ -1,0 +1,191 @@
+# Gmail Agent - rules.yaml example / template
+#
+# Order = priority (first match wins)
+# action: keep+important | keep | archive | spam
+#
+# sender match  → HIGH confidence → execute directly
+# subject match → LOW confidence  → AI confirmation required for classify
+#                                   spam auto-downgraded to archive if no sender match
+#
+# For bulk-classify:
+#   - spam rules: only sender conditions are used (no subject matching)
+#   - "-has:userlabels" protection prevents overwriting already-labeled emails
+
+categories:
+
+  # ── Security ──────────────────────────────────────────
+  - name: Security/Alert
+    action: keep+important
+    sender:
+      - accounts.google.com
+      - security@apple.com
+      - security@amazon.com
+      - security-noreply@github.com
+      - mail.anthropic.com
+    subject:
+      - security alert
+      - unusual activity
+      - suspicious sign-in
+      - account compromised
+
+  - name: Security/Login
+    action: keep+important
+    sender:
+      - noreply@github.com
+      - noreply@apple.com
+      - namesilo.com
+      - notify.docker.com
+      - noreply@steampowered.com
+    subject:
+      - new device
+      - new sign-in
+      - access from new
+      - logged in from
+
+  - name: Security/2FA
+    action: keep+important
+    sender:
+      - noreply@64clouds.com
+      - no-reply@substack.com       # substack sends 2FA from no-reply, newsletters from authors
+    subject:
+      - verification code
+      - one-time password
+      - OTP
+      - two-factor
+      - authenticate
+
+  - name: Security/Policy
+    action: archive
+    subject:
+      - privacy policy
+      - terms of service
+      - terms of use
+      - policy update
+
+  # ── Finance ───────────────────────────────────────────
+  - name: Finance/Income
+    action: keep+important
+    sender:
+      - alipay.com
+    subject:
+      - payment received
+      - deposit confirmed
+      - 收款
+      - 到账
+
+  - name: Finance/Payment
+    action: keep
+    sender:
+      - apple.com
+      - noreply@stripe.com
+      - billing@
+      - invoice@
+    subject:
+      - invoice
+      - receipt
+      - charged
+      - 发票
+      - 扣费
+
+  - name: Finance/Bank
+    action: keep
+    sender:
+      - dbs.com
+      - cmbchina.com
+      - icbc.com.cn
+    subject:
+      - statement
+      - transaction alert
+      - 交易提醒
+      - 账户变动
+
+  - name: Finance/Crypto
+    action: archive
+    sender:
+      - binance.com
+      - coinbase.com
+      - okx.com
+    subject:
+      - bitcoin
+      - BTC
+      - ETH
+      - withdrawal
+      - deposit
+
+  # ── Project ───────────────────────────────────────────
+  - name: Project/Review
+    action: keep+important
+    sender:
+      - notifications@github.com
+    subject:
+      - review requested
+      - requested your review
+      - mentioned you
+      - assigned to you
+
+  - name: Project/GitHub
+    action: archive
+    sender:
+      - notifications@github.com
+      - noreply@github.com
+
+  - name: Project/Deploy
+    action: archive
+    sender:
+      - vercel.com
+      - netlify.com
+    subject:
+      - deployment
+      - deploy failed
+      - build failed
+
+  - name: Project/Research
+    action: archive
+    sender:
+      - scholaralerts-noreply@google.com
+
+  # ── DevOps ────────────────────────────────────────────
+  - name: DevOps/Alert
+    action: keep+important
+    sender:
+      - pagerduty.com
+      - opsgenie.com
+    subject:
+      - alert
+      - critical
+      - outage
+      - incident
+
+  - name: DevOps/Billing
+    action: keep
+    sender:
+      - aws.amazon.com
+      - cloudflare.com
+      - runpod.io
+    subject:
+      - invoice
+      - billing
+      - usage report
+
+  - name: DevOps/Domain
+    action: keep
+    sender:
+      - namecheap.com
+      - godaddy.com
+    subject:
+      - domain
+      - SSL certificate
+      - expires
+      - renewal
+
+  # ── Ads ───────────────────────────────────────────────
+  - name: Ads
+    action: spam
+    sender:              # spam rules: bulk-classify uses sender-only queries
+      - pinterest
+      - mailchimp
+      - sendgrid
+    subject:             # in real-time classify: subject-only spam → downgraded to archive
+      - unsubscribe
+      - newsletter
+      - early access

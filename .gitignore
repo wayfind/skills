@@ -1,0 +1,6 @@
+# Dependencies and secrets — never commit
+node_modules/
+*.json
+!package.json
+*.yaml
+!*/references/*.yaml
