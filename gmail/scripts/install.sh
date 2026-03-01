@@ -64,18 +64,54 @@ install_binary() {
   fi
 
   DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST}/${BINARY_NAME}"
+  CHECKSUM_URL="https://github.com/${REPO}/releases/download/${LATEST}/checksums.txt"
   info "下载 $LATEST / $BINARY_NAME ..."
 
-  if curl -sfL "$DOWNLOAD_URL" -o "$BINARY_PATH.tmp"; then
-    mv "$BINARY_PATH.tmp" "$BINARY_PATH"
-    chmod +x "$BINARY_PATH"
-    success "二进制下载完成（$LATEST）。"
-    return 0
+  # 检测 sha256sum 工具（macOS 叫 shasum -a 256）
+  if command -v sha256sum &>/dev/null; then
+    SHA256_CMD="sha256sum"
+  elif command -v shasum &>/dev/null; then
+    SHA256_CMD="shasum -a 256"
   else
+    warn "未找到 sha256sum 或 shasum，跳过完整性校验（不推荐）。"
+    SHA256_CMD=""
+  fi
+
+  if ! curl -sfL "$DOWNLOAD_URL" -o "$BINARY_PATH.tmp"; then
     rm -f "$BINARY_PATH.tmp"
     warn "下载失败（URL: $DOWNLOAD_URL），将从源码编译。"
     return 1
   fi
+
+  # SHA256 校验
+  if [[ -n "$SHA256_CMD" ]]; then
+    if ! curl -sfL "$CHECKSUM_URL" -o "$BINARY_PATH.checksums"; then
+      rm -f "$BINARY_PATH.tmp" "$BINARY_PATH.checksums"
+      warn "无法下载 checksums.txt，跳过校验并从源码编译。"
+      return 1
+    fi
+
+    EXPECTED=$(grep " ${BINARY_NAME}$" "$BINARY_PATH.checksums" | awk '{print $1}')
+    rm -f "$BINARY_PATH.checksums"
+
+    if [[ -z "$EXPECTED" ]]; then
+      rm -f "$BINARY_PATH.tmp"
+      warn "checksums.txt 中未找到 ${BINARY_NAME} 条目，将从源码编译。"
+      return 1
+    fi
+
+    ACTUAL=$($SHA256_CMD "$BINARY_PATH.tmp" | awk '{print $1}')
+    if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+      rm -f "$BINARY_PATH.tmp"
+      die "SHA256 校验失败！文件可能已被篡改。\n  期望: $EXPECTED\n  实际: $ACTUAL"
+    fi
+    success "SHA256 校验通过。"
+  fi
+
+  mv "$BINARY_PATH.tmp" "$BINARY_PATH"
+  chmod +x "$BINARY_PATH"
+  success "二进制下载完成（$LATEST）。"
+  return 0
 }
 
 build_from_source() {
