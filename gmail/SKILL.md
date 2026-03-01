@@ -11,50 +11,31 @@ license: MIT
 
 # Gmail Agent Skill
 
-A Claude Code skill wrapping [gmail-agent](https://github.com/fanzhe/gmail-agent) —
-a Go CLI for Gmail automation via Google OAuth + Anthropic API.
+## First-Run Detection (run on every invocation)
 
-## Setup
+Before executing any email operation, check if gmail-agent is installed:
 
 ```bash
-# 1. Clone the project
-git clone https://github.com/fanzhe/gmail-agent ~/gmail-agent
-cd ~/gmail-agent
-
-# 2. Create Google OAuth credentials (no gcloud needed — browser only, ~5 clicks)
-./setup-gcp.sh
-# Guides you through: create project → enable Gmail API → create OAuth client
-# Waits for credentials.json to appear automatically
-
-# 3. Configure Anthropic API
-cp config.example.json config.json
-# Edit config.json: set anthropic_key or anthropic_token
-
-# 4. Initialize (opens browser for Gmail OAuth the first time)
-./run.sh init
-# Generates: labels-plan.yaml (AI-suggested label cleanup)
-#            rules.yaml (AI-generated classification rules from email samples)
-
-# 5. Review and adjust
-vim labels-plan.yaml
-vim rules.yaml
-
-# 6. Apply
-./run.sh labels apply labels-plan.yaml
-./run.sh classify --dry-run        # preview
-./run.sh classify --dry-run=false  # execute
+GMAIL_AGENT_DIR="${GMAIL_AGENT_DIR:-$HOME/gmail-agent}"
+ls "$GMAIL_AGENT_DIR/run.sh" 2>/dev/null
 ```
 
-> **Path:** The agent should use the project directory configured on this machine.
-> Default: `~/gmail-agent`. Adjust if installed elsewhere.
+**If not found:** Tell the user gmail-agent is not set up yet, then run the installer:
+
+```bash
+bash ~/.claude/skills/gmail/scripts/install.sh
+```
+
+This handles everything: clone → Google OAuth credentials → Anthropic API key →
+compile → Gmail authorization. Do not proceed with email operations until it completes.
+
+**If found:** Use `$GMAIL_AGENT_DIR/run.sh` for all commands below.
 
 ---
 
 ## Command Reference
 
 ```bash
-cd ~/gmail-agent   # adjust to actual project path
-
 # ── Daily Operations ────────────────────────────────────
 ./run.sh list                              # List unread emails (default 20)
 ./run.sh list -n 50                        # Specify count
@@ -99,9 +80,6 @@ cd ~/gmail-agent   # adjust to actual project path
 ./run.sh filters delete <id> [id...]       # Delete by ID ⚠️ confirm required
 ./run.sh filters apply filters-plan.yaml              # Preview plan
 ./run.sh filters apply filters-plan.yaml --dry-run=false  # Execute ⚠️
-
-# ── First-time Setup ────────────────────────────────────
-./run.sh init                              # OAuth + scan + AI-generate config
 ```
 
 ---
@@ -193,7 +171,7 @@ create:
 delete:
   - OldLabel
 merge:
-  - from: 招商银行
+  - from: OldName
     to: Finance/Bank
 ```
 
@@ -227,7 +205,6 @@ Confirmation example:
 About to delete the following 3 Gmail filters. Confirm?
 - ANe1BmgDb4... [from:newsletter@example.com] → TRASH
 - ANe1Bmg03p... [list:digest@example.com] → TRASH
-- ANe1BmgX9k... [from:noreply@ads.com] → SPAM
 Options: [Confirm] [Cancel]
 ```
 
