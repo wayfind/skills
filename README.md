@@ -18,6 +18,8 @@ Gmail automation powered by [gmail-agent](https://github.com/fanzhe/gmail-agent)
 
 **Install:**
 ```bash
+# Run from your HOME directory (important!)
+cd ~
 npx skills add wayfind/skills --skill gmail
 ```
 
