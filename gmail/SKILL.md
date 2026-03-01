@@ -17,7 +17,7 @@ Before executing any email operation, check if gmail-agent is installed:
 
 ```bash
 GMAIL_AGENT_DIR="${GMAIL_AGENT_DIR:-$HOME/gmail-agent}"
-ls "$GMAIL_AGENT_DIR/run.sh" 2>/dev/null
+ls "$GMAIL_AGENT_DIR/gmail-agent" 2>/dev/null
 ```
 
 **If not found:** Tell the user gmail-agent is not set up yet, then run the installer:
@@ -26,10 +26,10 @@ ls "$GMAIL_AGENT_DIR/run.sh" 2>/dev/null
 bash ~/.claude/skills/gmail/scripts/install.sh
 ```
 
-This handles everything: clone → Google OAuth credentials → Anthropic API key →
-compile → Gmail authorization. Do not proceed with email operations until it completes.
+This handles everything: clone → binary download → Anthropic API key →
+GCP credentials (guided) → Gmail OAuth authorization. Do not proceed with email operations until it completes.
 
-**If found:** Use `$GMAIL_AGENT_DIR/run.sh` for all commands below.
+**If found:** Use `$GMAIL_AGENT_DIR/gmail-agent` for all commands below.
 
 ---
 
@@ -37,49 +37,53 @@ compile → Gmail authorization. Do not proceed with email operations until it c
 
 ```bash
 # ── Daily Operations ────────────────────────────────────
-./run.sh list                              # List unread emails (default 20)
-./run.sh list -n 50                        # Specify count
-./run.sh list -q "in:spam"                 # List spam
-./run.sh list -q "in:trash"               # List trash
-./run.sh list -q "label:Finance"          # By label
-./run.sh list -q "from:github.com"        # By sender
+gmail-agent list                              # List unread emails (default 20)
+gmail-agent list -n 50                        # Specify count
+gmail-agent list -q "in:spam"                 # List spam
+gmail-agent list -q "in:trash"               # List trash
+gmail-agent list -q "label:Finance"          # By label
+gmail-agent list -q "from:github.com"        # By sender
 
-./run.sh send --to <addr> --subject <subj> --body <body>
-./run.sh reply <message-id> --body <body>  # Thread-aware reply
+gmail-agent send --to <addr> --subject <subj> --body <body>
+gmail-agent reply <message-id> --body <body>  # Thread-aware reply
 
-./run.sh delete <message-id>              # Move to trash
-./run.sh delete --permanent <message-id>  # Permanently delete ⚠️
+gmail-agent delete <message-id>              # Move to trash
+gmail-agent delete --permanent <message-id>  # Permanently delete ⚠️
 
-./run.sh ai-reply                          # Preview AI-generated replies
-./run.sh ai-reply --dry-run=false          # Actually send
-./run.sh ai-reply --dry-run=false -n 3    # Process up to 3 emails
+gmail-agent ai-reply                          # Preview AI-generated replies
+gmail-agent ai-reply --dry-run=false          # Actually send
+gmail-agent ai-reply --dry-run=false -n 3    # Process up to 3 emails
 
 # ── Real-time Classification (unread only) ───────────────
-./run.sh classify                          # Preview (rules from rules.yaml)
-./run.sh classify --dry-run=false          # Execute: label + archive/spam
-./run.sh classify --dry-run=false -n 100  # Specify count
+gmail-agent classify                          # Preview (rules from rules.yaml)
+gmail-agent classify --dry-run=false          # Execute: label + archive/spam
+gmail-agent classify --dry-run=false -n 100  # Specify count
 
 # ── Bulk Historical Classification ──────────────────────
-./run.sh bulk-classify                     # Preview (searches full mailbox)
-./run.sh bulk-classify --dry-run=false     # Execute
-./run.sh bulk-classify --only Finance/Payment --only Finance/Bank  # Selective
+gmail-agent bulk-classify                     # Preview (searches full mailbox)
+gmail-agent bulk-classify --dry-run=false     # Execute
+gmail-agent bulk-classify --only Finance/Payment --only Finance/Bank  # Selective
 
 # ── Spam Rescue ─────────────────────────────────────────
-./run.sh restore <message-id> [id...]      # Restore from spam/trash to inbox
-./run.sh restore -q "in:spam has:userlabels"  # Bulk restore by query
+gmail-agent restore <message-id> [id...]      # Restore from spam/trash to inbox
+gmail-agent restore -q "in:spam has:userlabels"  # Bulk restore by query
 
 # ── Label Management ────────────────────────────────────
-./run.sh labels list                       # List user labels
-./run.sh labels create "Finance/Bank"     # Create a label
-./run.sh labels delete "OldLabel"         # Delete label ⚠️ confirm required
-./run.sh labels merge "OldName" "New/Name"  # Migrate emails + delete old label ⚠️
-./run.sh labels apply labels-plan.yaml    # Execute a plan file
+gmail-agent labels list                       # List user labels
+gmail-agent labels create "Finance/Bank"     # Create a label
+gmail-agent labels delete "OldLabel"         # Delete label ⚠️ confirm required
+gmail-agent labels merge "OldName" "New/Name"  # Migrate emails + delete old label ⚠️
+gmail-agent labels apply labels-plan.yaml    # Execute a plan file
 
 # ── Filter Management ───────────────────────────────────
-./run.sh filters list                      # List all filters
-./run.sh filters delete <id> [id...]       # Delete by ID ⚠️ confirm required
-./run.sh filters apply filters-plan.yaml              # Preview plan
-./run.sh filters apply filters-plan.yaml --dry-run=false  # Execute ⚠️
+gmail-agent filters list                      # List all filters
+gmail-agent filters delete <id> [id...]       # Delete by ID ⚠️ confirm required
+gmail-agent filters apply filters-plan.yaml              # Preview plan
+gmail-agent filters apply filters-plan.yaml --dry-run=false  # Execute ⚠️
+
+# ── Setup ────────────────────────────────────────────────
+gmail-agent setup-gcp                         # Guided GCP credential setup
+gmail-agent init                              # OAuth auth + scan + AI-generate config
 ```
 
 ---

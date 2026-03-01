@@ -39,8 +39,8 @@ esac
 BINARY_NAME="gmail-agent_${OS}_${ARCH}"
 [[ "$OS" == "windows" ]] && BINARY_NAME="${BINARY_NAME}.exe"
 
-# ── 克隆源码（需要 run.sh、config 等文件）─────────────
-if [[ ! -f "$INSTALL_DIR/run.sh" ]]; then
+# ── 克隆源码（获取 config.example.json 等配置模板）──────
+if [[ ! -f "$INSTALL_DIR/config.example.json" ]]; then
   info "克隆 gmail-agent 到 $INSTALL_DIR ..."
   git clone "https://github.com/${REPO}.git" "$INSTALL_DIR"
   success "克隆完成。"
@@ -69,12 +69,12 @@ install_binary() {
 
   # 检测 sha256sum 工具（macOS 叫 shasum -a 256）
   if command -v sha256sum &>/dev/null; then
-    SHA256_CMD="sha256sum"
+    SHA256_CMD=(sha256sum)
   elif command -v shasum &>/dev/null; then
-    SHA256_CMD="shasum -a 256"
+    SHA256_CMD=(shasum -a 256)
   else
     warn "未找到 sha256sum 或 shasum，跳过完整性校验（不推荐）。"
-    SHA256_CMD=""
+    SHA256_CMD=()
   fi
 
   if ! curl -sfL "$DOWNLOAD_URL" -o "$BINARY_PATH.tmp"; then
@@ -84,7 +84,7 @@ install_binary() {
   fi
 
   # SHA256 校验
-  if [[ -n "$SHA256_CMD" ]]; then
+  if [[ ${#SHA256_CMD[@]} -gt 0 ]]; then
     if ! curl -sfL "$CHECKSUM_URL" -o "$BINARY_PATH.checksums"; then
       rm -f "$BINARY_PATH.tmp" "$BINARY_PATH.checksums"
       warn "无法下载 checksums.txt，跳过校验并从源码编译。"
@@ -100,7 +100,8 @@ install_binary() {
       return 1
     fi
 
-    ACTUAL=$($SHA256_CMD "$BINARY_PATH.tmp" | awk '{print $1}')
+    ACTUAL=("${SHA256_CMD[@]}" "$BINARY_PATH.tmp")
+    ACTUAL=$("${SHA256_CMD[@]}" "$BINARY_PATH.tmp" | awk '{print $1}')
     if [[ "$ACTUAL" != "$EXPECTED" ]]; then
       rm -f "$BINARY_PATH.tmp"
       die "SHA256 校验失败！文件可能已被篡改。\n  期望: $EXPECTED\n  实际: $ACTUAL"
@@ -127,15 +128,6 @@ if [[ ! -x "$BINARY_PATH" ]]; then
   install_binary || build_from_source
 else
   success "二进制已存在，跳过。"
-fi
-
-# ── Google OAuth 凭证 ───────────────────────────────────
-echo ""
-if [[ -f "credentials.json" ]]; then
-  success "credentials.json 已存在，跳过 GCP 配置。"
-else
-  info "启动 Google Cloud 凭证配置向导..."
-  bash "$INSTALL_DIR/setup-gcp.sh"
 fi
 
 # ── Anthropic API Key ───────────────────────────────────
@@ -165,10 +157,10 @@ EOF
   fi
 fi
 
-# ── Gmail OAuth 授权 ────────────────────────────────────
+# ── 初始化（GCP 引导 + Gmail OAuth 授权）───────────────
 echo ""
-info "启动 Gmail OAuth 授权（浏览器将打开，登录并点 Allow）..."
-./run.sh init
+info "启动初始化向导（将引导 GCP 配置和 Gmail 授权）..."
+"$BINARY_PATH" --config "$INSTALL_DIR/config.json" init
 
 # ── 写入环境变量 ────────────────────────────────────────
 EXPORT_LINE="export GMAIL_AGENT_DIR=\"$INSTALL_DIR\""
@@ -187,10 +179,10 @@ echo -e "${GREEN}${BOLD}══════════════════�
 echo ""
 echo "  安装路径：$INSTALL_DIR"
 echo ""
-echo "  常用命令："
-echo "    cd $INSTALL_DIR"
-echo "    ./run.sh list           # 查看未读邮件"
-echo "    ./run.sh classify       # 预览分类"
+echo "  常用命令（重新打开终端后 GMAIL_AGENT_DIR 生效）："
+echo "    gmail-agent list           # 查看未读邮件"
+echo "    gmail-agent classify       # 预览分类"
 echo ""
-echo "  重新打开终端后 GMAIL_AGENT_DIR 生效，Claude 将自动识别安装路径。"
+echo "  或指定完整路径："
+echo "    $INSTALL_DIR/gmail-agent list"
 echo ""
