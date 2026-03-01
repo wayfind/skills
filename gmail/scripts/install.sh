@@ -114,14 +114,15 @@ else
   read -r API_KEY
 
   if [[ -n "$API_KEY" ]]; then
-    python3 - <<EOF
-import json
+    ANTHROPIC_KEY_VAL="$API_KEY" python3 - <<'EOF'
+import json, os
 with open('config.json') as f:
     cfg = json.load(f)
-cfg['anthropic_key'] = '${API_KEY}'
+cfg['anthropic_key'] = os.environ['ANTHROPIC_KEY_VAL']
 with open('config.json', 'w') as f:
     json.dump(cfg, f, indent=2)
 EOF
+    chmod 600 config.json
     success "API Key 已写入 config.json。"
   else
     warn "已跳过，请之后手动编辑 $INSTALL_DIR/config.json。"
